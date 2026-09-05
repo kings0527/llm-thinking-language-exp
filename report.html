@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="8fh9cNgHhDzGHqtk8J73mv">
+<head data-page-node-id="2N7vweEfepyHFgDqiGewzG">
+<meta charset="UTF-8" data-page-node-id="cvVwUCrGv3XCCd6PFxLici">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="LgbsuCseGCLqCXYJbRbL3F">
+<title>LLM 思考语言是否影响结果 — 盲法对照实验报告</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{
+    --ink:#1b1b1b; --ink2:#5f5e5a; --ink3:#888780;
+    --line:rgba(0,0,0,.12); --line2:rgba(0,0,0,.06);
+    --bg:#ffffff; --bg2:#f7f6f3; --bg3:#f1efe8;
+    --blue:#378ADD; --teal:#1D9E75; --amber:#BA7517; --red:#E24B4A; --purple:#7F77DD;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg2);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:48px 24px 80px}
+  header{margin-bottom:36px}
+  h1{font-size:26px;font-weight:500;margin:0 0 10px;letter-spacing:-.01em}
+  .sub{color:var(--ink2);font-size:14px;margin:0}
+  .meta{color:var(--ink3);font-size:13px;margin-top:12px}
+  section{background:var(--bg);border:1px solid var(--line);border-radius:12px;
+    padding:28px 30px;margin-bottom:20px}
+  h2{font-size:17px;font-weight:500;margin:0 0 6px}
+  h2 .n{color:var(--ink3);font-weight:400;margin-right:8px}
+  .lead{color:var(--ink2);font-size:14px;margin:0 0 20px}
+  h3{font-size:14px;font-weight:500;margin:26px 0 10px}
+  p{margin:0 0 14px}
+  p:last-child{margin-bottom:0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+  .card{background:var(--bg3);border-radius:8px;padding:16px}
+  .card .k{font-size:12px;color:var(--ink2);margin-bottom:6px}
+  .card .v{font-size:24px;font-weight:500;line-height:1.2}
+  .card .u{font-size:12px;color:var(--ink3);margin-top:4px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+  th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line2)}
+  th{font-weight:500;color:var(--ink2);font-size:12.5px;border-bottom:1px solid var(--line)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:4px;
+    background:var(--bg3);color:var(--ink2);margin-right:4px}
+  .tag.cn{background:#E6F1FB;color:#185FA5}
+  .tag.en{background:#FAEEDA;color:#854F0B}
+  .tag.mix{background:#EEEDFE;color:#534AB7}
+  .chartbox{position:relative;width:100%;height:300px;margin:18px 0 8px}
+  .chartbox.tall{height:340px}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:var(--ink2);margin-bottom:6px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+  .note{background:var(--bg2);border-left:2px solid var(--line);
+    padding:12px 16px;font-size:13.5px;color:var(--ink2);margin:16px 0;border-radius:0 6px 6px 0}
+  .note strong{color:var(--ink);font-weight:500}
+  .find{border-left-color:var(--blue)}
+  .warn{border-left-color:var(--amber)}
+  ol,ul{margin:0 0 14px;padding-left:22px}
+  li{margin-bottom:8px}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;
+    background:var(--bg3);padding:1px 5px;border-radius:3px}
+  .heat td{text-align:center;font-variant-numeric:tabular-nums;font-size:12.5px}
+  .heat td.lbl{text-align:left;color:var(--ink2)}
+  .c0{background:#E6F1FB;color:#185FA5}
+  .c1{background:#B5D4F4;color:#0C447C}
+  .c2{background:#85B7EB;color:#042C53}
+  .c3{background:#FAEEDA;color:#854F0B}
+  .c4{background:#FAC775;color:#633806}
+  .foot{color:var(--ink3);font-size:12.5px;text-align:center;margin-top:32px}
+</style>
+</head>
+<body data-page-node-id="0bLK6SfkEycEH1X0uDwSQL">
+<div class="wrap" data-page-node-id="ZYxDOgkFCB2WEDgwyloIIx">
+
+<header data-page-node-id="pEmQXis6itTCEmX46sMe6L">
+  <h1 data-page-node-id="t6bH0yoYsgiitiiftEHX8g">LLM 思考时使用什么语言，会影响结果吗？</h1>
+  <p class="sub" data-page-node-id="Qp2Ne19lGJq1tdWTCAsPwm">一项 4 条件 × 3 轮、带操纵检验与盲评环节设计的对照实验</p>
+  <p class="meta" data-page-node-id="XNMiSPDciW3l8QYltDwFvx">实验日期 2026-09-05 · 被试：通用大语言模型 · 题库 16 题 + 镜像长链 50/200 步 · 有效答卷 34 份</p>
+</header>
+
+<section data-page-node-id="OpCspZlGsENncju8qmPIBc">
+  <h2 data-page-node-id="GEeBOAvMunwwonaBP7V4AA"><span class="n" data-page-node-id="GHcENOpbtWZJtqntwmQ9oM">摘要</span>一句话结论</h2>
+  <p class="lead" data-page-node-id="DQ3zDOXeSd4iyoEgDog7Qj">思考语言对<strong data-page-node-id="g8mYKqa7hnbHzY5YFvelLF">答案正确性几乎没有影响</strong>（差异 1.1%，且在天花板内），但对<strong data-page-node-id="bjJG2kiTznGTkMxFgXkD0K">推理成本有明显影响</strong>（最高可差 39%）。真正值得优化的从来不是"用哪种语言想"，而是"这道题有没有超出模型的能力边界"。</p>
+  <div class="cards" data-page-node-id="I7kORU978wvP5bfkiiBKBE">
+    <div class="card" data-page-node-id="LKisHs5GG7EF0ckbYSa6wB"><div class="k" data-page-node-id="MF4KxzrgcAQFCM2AI2VfMS">准确率极差</div><div class="v" data-page-node-id="Kplljp49ynCTNMBATtjEtQ">1.1%</div><div class="u" data-page-node-id="lvknVgLaXX54KXIONUBg9k">31.33 – 31.67 / 32 分</div></div>
+    <div class="card" data-page-node-id="kOieiwSaP9bYVspqYoZ1ya"><div class="k" data-page-node-id="ZyeGihgO4mfsMoTsuMFvoC">思考成本极差</div><div class="v" data-page-node-id="BTNKiaWdBX1O5XOJjLFpyp">39%</div><div class="u" data-page-node-id="SfO4SLBQDJ5AvWREvOPU23">7596 – 10547 token</div></div>
+    <div class="card" data-page-node-id="cEf1OFIj5nWAPJ6n9kCjyN"><div class="k" data-page-node-id="PmvsGwUcXixze3iSgnVqYr">第一轮满分率</div><div class="v" data-page-node-id="ZrNQpGCu7wssBCA9o5GPPN">12/12</div><div class="u" data-page-node-id="1YtG525NNtwC57m3fnxH3q">10 题全部答对，零区分度</div></div>
+    <div class="card" data-page-node-id="7kl7Rdof7BJcVJkgAl8grI"><div class="k" data-page-node-id="HDYQ460eSa3WBnbLqnm2LA">模型自选英文比例</div><div class="v" data-page-node-id="pjSbKyDP4KtabwZD94p7fe">70–80%</div><div class="u" data-page-node-id="1d47rHqVMAuSPRniNZTVqf">让它自己挑时它偏向英文</div></div>
+    <div class="card" data-page-node-id="NEWCARD200"><div class="k" data-page-node-id="NEWCARD200K">200 步压力测试</div><div class="v" data-page-node-id="NEWCARD200V">0 错</div><div class="u" data-page-node-id="NEWCARD200U">800 个步骤值全部精确</div></div>
+  </div>
+</section>
+
+<section data-page-node-id="d0FUpGSFLH0yE1JewbI5JA">
+  <h2 data-page-node-id="oEP7o4Ct59xEikuuanTF8J"><span class="n" data-page-node-id="jhgIxNHDkZUfWCgNBlMAbQ">01</span>实验设计</h2>
+  <p class="lead" data-page-node-id="Z87k6236GYYw6an1t5P0iE">自己做自己的实验最大的风险是"知道自己被测试"。因此全程采用<strong data-page-node-id="xd8ZkkIYLGbH2MjT8C616n">盲法</strong>：解题者不知道实验目的，只拿到题目。</p>
+
+  <h3 data-page-node-id="tFg1o7sVQuXOgpSTMUMOOd">四个实验条件</h3>
+  <table data-page-node-id="imhjSaBIa2okGWLUFps8vR">
+    <thead data-page-node-id="0SlbXip4bU5OF62vGFVgvi"><tr data-page-node-id="lKX3B22RxENDpH90PEpxEa"><th data-page-node-id="mf5ZAerHr1GK051HgdKIvC">代号</th><th data-page-node-id="suTymGTBMvDLtcDOTmOart">处理方式</th><th data-page-node-id="NRrCy2kN0YuTFt4h1XgPxW">设计意图</th></tr></thead>
+    <tbody data-page-node-id="3KH4t7GfFoH3hIlN6BQICk">
+      <tr data-page-node-id="M9rjHkQHqJoEDgRWrtbo2Z"><td data-page-node-id="dCsqDz74C5g75mgdGQbda4"><strong data-page-node-id="C6DsArz7USmvKZ0hCz0rmi">EN</strong></td><td data-page-node-id="gM3LECgvTAgaEpt05xoCeC">强制用英文逐步推理，答案用中文</td><td data-page-node-id="USOsQQEhR51rZ5UzDhlDji">检验"英文思考更强"这一流行说法</td></tr>
+      <tr data-page-node-id="Kjf1TuwDXpYJeJePM0RHuE"><td data-page-node-id="sbXipFkY0EL7PYkxCvKnEH"><strong data-page-node-id="Ewl7Ia0SNH1H5lq0eidZ0T">ZH</strong></td><td data-page-node-id="iWOFtoSz5YoBkGY5QopDct">强制用中文逐步推理，答案用中文</td><td data-page-node-id="lwXu1O9KZNhHbGHcdfBaJS">基线对照</td></tr>
+      <tr data-page-node-id="jFOXDn24rlLl3HuPzoRh2L"><td data-page-node-id="GTkVvXAXDvG2Upv7PvtHoB"><strong data-page-node-id="afdZlVgc1LJFZbxxLdNmH3">NAT</strong></td><td data-page-node-id="kNkSoE7wWpHEUIYmk4fXQD">不指定，要求"用什么语言顺手就用什么"</td><td data-page-node-id="Wlcg7brH9vN2V1HmRzJe8D">观察模型的默认思考语言</td></tr>
+      <tr data-page-node-id="ibN2nMTyHVDqOV6Igvlea5"><td data-page-node-id="JoHt4dHv0lUCGAS8OqN6ZV"><strong data-page-node-id="m18T5Alqy6Fyek1ifYInpp">ADAPT</strong></td><td data-page-node-id="9FaudVvNC3BB3gfDKV2O6i">先判断题型，再自选题目的思考语言</td><td data-page-node-id="5L75FVaJqCI7fDrPoPHS4O">检验"自适应选择"是否优于固定策略</td></tr>
+    </tbody>
+  </table>
+
+  <h3 data-page-node-id="pnSYHJaT4Tvw5IjioaD5Uz">控制与防污染措施</h3>
+  <ul data-page-node-id="fZDpYrB1dl4dop9oy26mI1">
+    <li data-page-node-id="CHYPOqvuyg3ZwxEVObHDjG"><strong data-page-node-id="M3iiUp9xOF2PxGX3R7a7Pq">盲法</strong>：12 个解题子代理各自独立，只收到题目和格式要求，不知道存在其他条件、不知道实验假设。</li>
+    <li data-page-node-id="tGF3HtORK7TdCo7kztvBBX"><strong data-page-node-id="gaZNuuyzn262bjrwgBXLXh">操纵检验</strong>：不假设指令被执行，而是事后统计推理段落的中英文字符比例来<strong data-page-node-id="hR3gjZUCub8n9ePOkufJGW">验证</strong>语言操纵是否真的生效。</li>
+    <li data-page-node-id="2MWUp6j0FS07AL9pIhGX6V"><strong data-page-node-id="xnCZdaqg0jjt3zKxsYpVKv">顺序轮换</strong>：3 轮分别使用正序、倒序、乱序作答，消除题目顺序效应。</li>
+    <li data-page-node-id="uJ1ZdrgBrhG8rqW5YCRf0k"><strong data-page-node-id="hb02kY1jnqUioUBfIOaYHF">答案语言统一</strong>：所有条件最终答案均为简体中文，使"答案语言"不成为混淆变量。</li>
+    <li data-page-node-id="mHx4ma5N1gNqKOuqfARwYh"><strong data-page-node-id="dGmylK7tKAPzBsyo75Fo74">金标准外部验证</strong>：所有客观题答案用代码暴力枚举校验（如逻辑题用位掩码搜索到唯一解组合，组合计数题暴力 5040 种排列验证）。</li>
+  </ul>
+
+  <h3 data-page-node-id="GXLtsVQFIBHMZpdRjHePkF">题库构成</h3>
+  <p data-page-node-id="8bVMZk9QkAZ1X96TeStyUe">按"语言依赖度"分层，使题目分布在光谱两端：<span class="tag" data-page-node-id="N2aQ1EhjbUD8a14KEBv2ry">语言中性</span>纯符号推理（数列周期、组合计数、逻辑枚举、代码）、<span class="tag cn" data-page-node-id="mQYqwC5SIhRdsbT8TcgbRF">中文强依赖</span>训诂与歧义（先秦"他"字、断句、"差点/差点没"、"他谁都不认识"）、<span class="tag en" data-page-node-id="I9BD8K6tXgmXciiOq8xJmF">英文强依赖</span>句法语用（不定式控制歧义、抑扬格、"didn't bother to"）、<span class="tag mix" data-page-node-id="KG1jERXEIb2BYtSpZeYLMj">跨语言</span>翻译与跨文化语用（英式礼貌性否定）。</p>
+</section>
+
+<section data-page-node-id="86S9Mmswd2IKcnPltvmNgm">
+  <h2 data-page-node-id="59M5VVVIvGUHFGMNp2ZZjp"><span class="n" data-page-node-id="zlORkqoRhhD6fmVNqgKieS">02</span>操纵检验：指令真的被执行了吗？</h2>
+  <p class="lead" data-page-node-id="0zTVOVUgAbujxUB2gAKG95">如果"用英文思考"的指令没被真正执行，后面所有结论都是空的。实测结果：操纵成立。</p>
+  <table data-page-node-id="mzBdIEJEOC9UVTqBvZrjeq">
+    <thead data-page-node-id="F6LmPUcfuicEzsKmrqyVIU"><tr data-page-node-id="N197GjqCdbVXS4d6Iga47M"><th data-page-node-id="yI5TCerBTI5ADQEKoBZyuM">条件</th><th class="num" data-page-node-id="4ux6l2HeSE6UGWOe52gRTV">R1</th><th class="num" data-page-node-id="dxseavqV6GFtTYrOBh4nxe">R2</th><th class="num" data-page-node-id="0aTAY8yBs5bnCffHB13Unn">R3</th><th data-page-node-id="TKElDAqb1gaDw7AVDC7rO2">实际执行情况</th></tr></thead>
+    <tbody data-page-node-id="OGwqGn0leAspTQ2JKRZZAN">
+      <tr data-page-node-id="sR8j2hcIy6MKyHQYTuUNTt"><td data-page-node-id="bVqe552F2IDJlDh4s93yd5"><strong data-page-node-id="MGorqyFvTjlJ8OIpdLlWPi">EN</strong></td><td class="num" data-page-node-id="9Q9vbxlvhLXaP805QycOrM">3.6%</td><td class="num" data-page-node-id="qVDZSwyFlr4OGZiTzNOlW5">3.8%</td><td class="num" data-page-node-id="7G1AfppMAWO1MKC9TUnKVI">3.8%</td><td data-page-node-id="wIGO1FNEkpeiprHgqY2lKg">几乎纯英文（残留为引用的中文例句）</td></tr>
+      <tr data-page-node-id="DubAxy5P0yUxD48isa7JAl"><td data-page-node-id="eVVaFnGPGJU9O87hp60I9l"><strong data-page-node-id="kC0PjMuOeex5cAEgqMbm9R">ZH</strong></td><td class="num" data-page-node-id="H8qltEFKszjfd2atDt0NkF">73.5%</td><td class="num" data-page-node-id="V0FQIuExd6gVbfs74Jk23r">75.5%</td><td class="num" data-page-node-id="fHJri1425JHzY6K67yGlMh">68.2%</td><td data-page-node-id="oKKXbEY04zif7xPvFRu3gD">中文为主（残留为英文学术术语）</td></tr>
+      <tr data-page-node-id="hdbU0K6nXP4TSx2d4Tr7DB"><td data-page-node-id="4l24oFB6glmUjn9CvcmrZ8"><strong data-page-node-id="OCnlYCdzeMRyzLfoA597Ct">NAT</strong></td><td class="num" data-page-node-id="BUBgl1Hnkmjw9w6Y3If8PZ">76.5%</td><td class="num" data-page-node-id="X9neUm2AkOAC7MTlCYWUMx">69.2%</td><td class="num" data-page-node-id="kYIlEZiQD6pGgjXk8m74to">70.3%</td><td data-page-node-id="SdcIVJg78Bv8BNcSE3ea9z">默认即中文，与 ZH 几乎一致</td></tr>
+      <tr data-page-node-id="JSDPUNo8CHiFED33jF1MYO"><td data-page-node-id="XH3gpTLSrb9a5f0yD5ZbJB"><strong data-page-node-id="jxwU54p1U4SLnV6boW22af">ADAPT</strong></td><td class="num" data-page-node-id="hgwM2n5o5dmCVvaOVtISGc">28.2%</td><td class="num" data-page-node-id="104NV1AAefku8P36XNNl8C">19.2%</td><td class="num" data-page-node-id="FXsi19NrCbfOChGEUBvzEi">30.0%</td><td data-page-node-id="gAqoKWkW4DxplZEqB4CbmE">主动切换，约 70–80% 用英文</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:var(--ink2)" data-page-node-id="9Vi5jIWZILUStjeYs3OHQk">数值为推理段落中中文字符占比。EN 条件的 3.6% 说明强制英文生效；NAT 与 ZH 高度重合说明中文是模型的默认思考语言。</p>
+
+  <div class="note find" data-page-node-id="UBx2sR6PK800eqa0BRPttJ">
+    <strong data-page-node-id="mjy7KtjkqrPJdWsrvVkT3R">意外收获 ①：</strong>不指定语言时，模型默认用<strong data-page-node-id="LmWAGtCUJmAfWuMt75xaXK">中文</strong>思考（约 70%），与强制中文条件几乎无法区分。
+  </div>
+  <div class="note find" data-page-node-id="dTyDSyJIsKwCE7coUFoibv">
+    <strong data-page-node-id="yfQv0C4wsnv8RC6FgBxfRB">意外收获 ②：</strong>一旦要求模型"先判断题型再选语言"，它会把 <strong data-page-node-id="gVO8aHQcTEslPq0BOwncg5">70–80% 的思考切到英文</strong> —— 模型的元认知偏好是英文，尽管它默认并不这么做。
+  </div>
+</section>
+
+<section data-page-node-id="QOOeYFJePl90QZiFxqIXjF">
+  <h2 data-page-node-id="eW84lQmd6gWlfcADROwB1X"><span class="n" data-page-node-id="b9SK6v9piM1q3Q03Jr6zyK">03</span>结果一：准确率没有可测量的差异</h2>
+  <p class="lead" data-page-node-id="D01Py7lhkT4UTffOH7p7wc">这是本次实验最"无聊"也最重要的结果：在模型能力范围内的题目上，换思考语言救不了也害不了结果。</p>
+
+  <div class="legend" data-page-node-id="LWo96Wnx0ZYDot79nL8KU0">
+    <span data-page-node-id="WDkAu7alm8b2jA2z3OAmH9"><span class="dot" style="background:#B5D4F4" data-page-node-id="Ck5KPNwuARSfke1GZRB5XB"></span>EN</span>
+    <span data-page-node-id="YGAaHQtnFij5jGaj97Vaot"><span class="dot" style="background:#85B7EB" data-page-node-id="W7p3HIufaDerdqqMABZZKg"></span>ZH</span>
+    <span data-page-node-id="diuGyDxJBVFkY4JkEwdBsw"><span class="dot" style="background:#378ADD" data-page-node-id="1aucu6IBcdpz69onycSEAJ"></span>NAT</span>
+    <span data-page-node-id="E5aLPQiGtbbkR5srA1pKQ9"><span class="dot" style="background:#185FA5" data-page-node-id="DUfMHEcWyUbL5Hk3FW78Vt"></span>ADAPT</span>
+  </div>
+  <div class="chartbox" data-page-node-id="PVvZM65OSEN8EzV5q4Qm16"><canvas id="c1" role="img" aria-label="四条件得分柱状图，均在31.3至31.7之间" data-page-node-id="xu9NYnyovAFvxmF9sfRKF3">EN 31.33，ZH 31.67，NAT 31.67，ADAPT 31.33（满分 32）。</canvas></div>
+
+  <table data-page-node-id="zDNXVvwSHAQ7qWE70F85r3">
+    <thead data-page-node-id="Y5KHs3NrO9mQ7H6k9mK6Q3"><tr data-page-node-id="B0ETJJX3KD9El2TGld6m3B"><th data-page-node-id="pc1FmDlWLf3hlNwgcUMm3c">轮次</th><th class="num" data-page-node-id="pyB6HGBisLbBN4B0aREBSm">EN</th><th class="num" data-page-node-id="qESjPrHfYvmzm6EHWxheV1">ZH</th><th class="num" data-page-node-id="IqKCVxi7LtPJt9vTNvmslF">NAT</th><th class="num" data-page-node-id="vMPyfnqgPEV5S15uG8UNcj">ADAPT</th><th class="num" data-page-node-id="DCkb0EnUouFb2gfEWYt8yG">满分</th></tr></thead>
+    <tbody data-page-node-id="NenzqCmKcMxxIGJonZWcxA">
+      <tr data-page-node-id="FiBdafiWn01ljDzaxjkro0"><td data-page-node-id="BvkFkytGYOWtrZbAA1gnx7">第一轮（中等 10 题）</td><td class="num" data-page-node-id="bNfiKbeddJSGUTxz9fVMT5">20.00</td><td class="num" data-page-node-id="dsYAwd620FHK2gsHRe3l0l">20.00</td><td class="num" data-page-node-id="B9ky4CvCFX1ZSD3Xo8nZim">20.00</td><td class="num" data-page-node-id="klqqgeftbriA9yTnPcWVhj">20.00</td><td class="num" data-page-node-id="t4nCIwRe0R2Ej3fVoMT16a">20</td></tr>
+      <tr data-page-node-id="QAR8ZgYTM0LhLESAqDTsCF"><td data-page-node-id="Ri4CWHJEaFAungiSoy26dm">第二轮（高难 6 题）</td><td class="num" data-page-node-id="162LfUbu1qiC3j583h28XP">11.33</td><td class="num" data-page-node-id="a7XBwD31jSEZqYQYeW1e4h">11.67</td><td class="num" data-page-node-id="IYcBul9xI5bBhGAwmPYamN">11.67</td><td class="num" data-page-node-id="fEwbVUH4Wozy07HWCGjyOX">11.33</td><td class="num" data-page-node-id="LaScqvqDECFQl7thCRm43H">12</td></tr>
+      <tr data-page-node-id="ZkAAuAShxqeL0zL0VAynA7"><td data-page-node-id="r6jwZ9pD75RkEJ41n0bCK8"><strong data-page-node-id="JBFeapFiC1EQXTBkfCEcMJ">合计</strong></td><td class="num" data-page-node-id="kPmPE9295HaJP5tsKnbDo9"><strong data-page-node-id="A2Um4ekfob3zjNYHykecFq">31.33</strong></td><td class="num" data-page-node-id="5DYCxoGVQ4lWDl3KuQC0PR"><strong data-page-node-id="YiTWhcQfwsyOBGd6G8abxJ">31.67</strong></td><td class="num" data-page-node-id="tqzDEeggSa4Buf17SaVcUu"><strong data-page-node-id="91MOzaUVbj6lLTxn3YjOG9">31.67</strong></td><td class="num" data-page-node-id="tiWZn66gtN2UCG8WCf3QFE"><strong data-page-node-id="g3V3DJB27AjUCwC7DDYZhp">31.33</strong></td><td class="num" data-page-node-id="EOSs8iPL9LHLG2iuxqHINS">32</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note warn" data-page-node-id="zmCg4h829AATFCLcQ69JPL">
+    <strong data-page-node-id="dI21rAJ3CIJbnBGDI28FYY">天花板效应：</strong>第一轮 12 份答卷<strong data-page-node-id="vqbmea57USQ4ZnRFYgL4zw">全部满分</strong>，10 道题零区分度。这直接暴露了实验设计的问题——题目太简单，测不出差异。于是加跑第二轮高难度卷（含先秦训诂、组合计数、英语搭配纠错等），即便如此，6 题中也只有 1 题出现了分歧。
+  </div>
+
+  <h3 data-page-node-id="JOTxRpIT3nzIQAXCfz4Lb9">唯一的例外：一道有学术争议的题</h3>
+  <p data-page-node-id="YeXxSC9QQn2IUIQP4xIfHG">第二轮 H5（"他谁都不认识"的歧义分析）是唯一出现分歧的题目。所有 12 份都正确识别出两种理解和"任指"用法，但在"<em data-page-node-id="aJEC91IUlG7B4IImTHXN83">他谁都认识</em>是否同样歧义"这一点上分裂成两派：6 份认为歧义程度相同，6 份认为否定句歧义更强。按预设金标准评分后，ZH 与 NAT 略占优（1.67 vs 1.33 分），但样本量仅 3，<strong data-page-node-id="JL5IZKbwyAiaaweFJ7BmTv">不具统计显著性</strong>。</p>
+  <p style="font-size:13px;color:var(--ink2)" data-page-node-id="bZHJWB4CYXX6eMbC9bC4wq">值得强调的是：即便在这道题上，<strong data-page-node-id="CDHfGsLsHQYThAb7rw3fh5">英文思考的答卷依然正确解析了中文的施受关系歧义、话题化结构和"任指"用法</strong>。这说明语言切换没有造成语义损失的直觉担忧，在实测中不成立。</p>
+</section>
+
+<section data-page-node-id="VredcePjAfsvkhGdtyHnNy">
+  <h2 data-page-node-id="zzFt59oxEMNndXdY0R0ojY"><span class="n" data-page-node-id="9BcjpPZw1cODKymqMIn1cz">04</span>结果二：成本差异显著，且方向与直觉相反</h2>
+  <p class="lead" data-page-node-id="0YIHhuVDM2IPIg1pE9TIFw">准确率打平，但推理开销差了最多 39%。而且这里藏着本次实验最反直觉的发现。</p>
+
+  <h3 data-page-node-id="CQG3FiMFdHTZGc8IjlgzTH">4.1 字符数 vs token 数的反转</h3>
+  <p data-page-node-id="OiyrJReGuMPBtObmL1TNEt">按字符数看，英文思考"写得更多"（23601 vs 10632 字符，2.2 倍），很容易得出"英文思考更啰嗦、更贵"的结论。但按真实 token 计算，结论<strong data-page-node-id="kzzst6YCKvGfYBu0SYQKWj">完全反转</strong>：</p>
+  <table data-page-node-id="MQCP1PhalvPDzk3Q6feGka">
+    <thead data-page-node-id="8FUQ89OHM7tzuj6DvDH8sU"><tr data-page-node-id="MtQ5WEm7K3hZoeDmUpmEoG"><th data-page-node-id="Ixz1U3pMjnd6EA9svieXhG">条件</th><th class="num" data-page-node-id="JEYFDG3OIyRviEmj3a3pBD">思考字符</th><th class="num" data-page-node-id="GRSuguyYlkF1DkNxD2uqLO">思考 token</th><th class="num" data-page-node-id="XIAZkDgpQa0S5ZXBSAytN4">字符/token</th><th data-page-node-id="GVKqfRM2QMj463f8xMd1zb">直觉 vs 实际</th></tr></thead>
+    <tbody data-page-node-id="BrWix4WBdKsOG9oCaAoSlr">
+      <tr data-page-node-id="zCIFJ5SvYJN7JgeyAB1Lrn"><td data-page-node-id="Vm5NTiCGQgK9B5eNZgK9ce"><strong data-page-node-id="fXfUYREceOqakCEMcAzm85">EN</strong></td><td class="num" data-page-node-id="cBrXjY3fYQEAvqDb283EFU">23,601</td><td class="num" data-page-node-id="Kca7aolNeClI2TI7av2YnE"><strong data-page-node-id="AUsa4vdjXSTZd1F1nD4DgY">7,596</strong></td><td class="num" data-page-node-id="FmDapdZ5DHXmVK3FnWuvew">3.11</td><td data-page-node-id="it74C1hobMMv6Ic7bX45PE">字符最多，token 最少</td></tr>
+      <tr data-page-node-id="UJVe12ksbASOwwJ3fZwsHl"><td data-page-node-id="mFurtTRJJS9kolznMfloqg"><strong data-page-node-id="8i5gELzISVk90xYbhHj6he">NAT</strong></td><td class="num" data-page-node-id="Vs9jHAFMxuggOVeXndxnOL">10,698</td><td class="num" data-page-node-id="QQDjib6g37NDPBM6RFhl9K">8,538</td><td class="num" data-page-node-id="AaDl3YUUikkozQIpxPkTUR">1.25</td><td data-page-node-id="ouVbf8CMKPHKwB5XxnvlDd">—</td></tr>
+      <tr data-page-node-id="FVnefuHzHzQiJrUJin7ym0"><td data-page-node-id="fO33whPK6u9E8IDDcYX28A"><strong data-page-node-id="aelugVckjBWBXqx61MEG4H">ZH</strong></td><td class="num" data-page-node-id="jAH6ZCM7yHlOrX2StjyZLL">10,632</td><td class="num" data-page-node-id="0K00J5eB83453d6yDpZv2i"><strong data-page-node-id="2MmmL5h4m5OsNfOeuTfQiB">9,194</strong></td><td class="num" data-page-node-id="UWCybnAECOyJGEWtVQjuje">1.16</td><td data-page-node-id="I5XoCJezcsJY5v0H9nIsAS">字符少，token 反而多</td></tr>
+      <tr data-page-node-id="GMedRtlqjuDecdlkt2slxg"><td data-page-node-id="rGC04EDOJAmDOy3hpIEEO0"><strong data-page-node-id="vUaau0VIXHzdlQJ6w4Flxr">ADAPT</strong></td><td class="num" data-page-node-id="49BTrV590zzn6XSJLXWh9e">19,614</td><td class="num" data-page-node-id="R8ZEnGA7vmPRANG9aJcOrQ">10,547</td><td class="num" data-page-node-id="I4CW0tDWBhUK6KkQFxYNGC">1.86</td><td data-page-node-id="jmVTEaKufhguxtrFcuijXd">最贵</td></tr>
+    </tbody>
+  </table>
+  <div class="note find" data-page-node-id="94KgFYQyqxJHbECapqcpO5">
+    <strong data-page-node-id="SAvtfngmk8sW2zUM5h2Xhy">核心发现：</strong>中文在 tokenizer 中编码效率极低——实测约 <strong data-page-node-id="UsUR5WG4zV6ffO7DGEozrC">1.16 字符/token（几乎一字一 token）</strong>，英文则为 <strong data-page-node-id="Z1lfT9qtQSBY8lRFJNm23M">3.11 字符/token</strong>。中文"一字顶多字"的信息密度优势，不足以抵消编码劣势。结果就是：<strong data-page-node-id="2Vx2wQbSxQ6wfnz7gXOKrA">同样的推理内容，用中文思考要多花约 21% 的 token</strong>（ZH 9194 vs EN 7596）。
+  </div>
+
+  <h3 data-page-node-id="Y1XRpYiHlZz0Pa6gWyqsHq">4.2 总输出量接近，但分配截然相反</h3>
+  <div class="legend" data-page-node-id="vMQkOnNyolKeRTheqZZRAG">
+    <span data-page-node-id="LYp04i2yCv4JxwaIqCeolO"><span class="dot" style="background:#378ADD" data-page-node-id="L97SlUagelM4h92c5lIXIt"></span>思考 token</span>
+    <span data-page-node-id="2aIkyuocMWASH4ffGwOpyB"><span class="dot" style="background:#9FE1CB" data-page-node-id="tIulgpPuXgdxV2GnE6aqAK"></span>答案 token</span>
+  </div>
+  <div class="chartbox" data-page-node-id="Bba5tt0tVirKrBOmQAQ6bM"><canvas id="c2" role="img" aria-label="堆叠柱状图：四条件总输出token接近但思考与答案分配相反" data-page-node-id="r1gWMyTe0mHQkeJHHobkS2">总输出 1.28–1.39 万 token，但 EN 想得少说得多，ADAPT 想得多说得少。</canvas></div>
+  <table data-page-node-id="xH1xSh3pnT93KXURt5SkDY">
+    <thead data-page-node-id="EAJ8MnsHn02RhA11dK5zPW"><tr data-page-node-id="jjtgzStZk8MvmZOPBdWrRp"><th data-page-node-id="jVRB7u9FRJybKveUG58ufQ">条件</th><th class="num" data-page-node-id="5RJ7yCpnH6RYZXLQxwGCEd">思考</th><th class="num" data-page-node-id="XZkSqgNvXfod1CIfxzJjMN">答案</th><th class="num" data-page-node-id="yLaqZjudFyYOYLDq8WK132">合计</th><th class="num" data-page-node-id="X2ZrUetsxTFuFmD4mxogpG">每分思考成本</th><th data-page-node-id="1SbNU8MNZP4uxeCtQ3IvnD">特征</th></tr></thead>
+    <tbody data-page-node-id="1lHdI0XFO9ccoWMMQOzEAa">
+      <tr data-page-node-id="3wB7hrjP9Tcuz4EdLQrxOz"><td data-page-node-id="w6OYAC7QmXfz3kjZItIZU6"><strong data-page-node-id="woovRcoyF3R4kdzlJ4IfvV">EN</strong></td><td class="num" data-page-node-id="cNva5dUXjX3ouECONMKU47">7,596</td><td class="num" data-page-node-id="uk7q5uoDhifivnPJDmKVeI">6,103</td><td class="num" data-page-node-id="AmK049IixWgW68ZrPV4wuF">13,699</td><td class="num" data-page-node-id="BcB74BgL8AgC2rhFR2DpZv">242</td><td data-page-node-id="1eFuFKACmp8mplpBWqBTGB">想得少、说得多</td></tr>
+      <tr data-page-node-id="eeS888GFpiv744pgUNWlz1"><td data-page-node-id="WndaYXmVBGdzAdihH9CHzx"><strong data-page-node-id="cKnZ0bf3S1SFqrNZ8CO0D5">NAT</strong></td><td class="num" data-page-node-id="MLYKREiO0hDPUZNjg1N2oI">8,538</td><td class="num" data-page-node-id="gewTOJGp3KxGgBO7XjA3XE">4,223</td><td class="num" data-page-node-id="mJGPBW8VidqN7JWfzCyMW7">12,761</td><td class="num" data-page-node-id="AVyHc4PHrzqIgQ4QathCrq">270</td><td data-page-node-id="TTom3ZhmjGlDHQY12qo90G">总量最省</td></tr>
+      <tr data-page-node-id="IUUVOOcEYntLuPS7ZeOQE0"><td data-page-node-id="nNzX2JbwxJzhB6MoNWMyBk"><strong data-page-node-id="ySYnB2yVmzuFltfhJzLe0N">ZH</strong></td><td class="num" data-page-node-id="3LUzDPk7EFPmZ7qWcNdWAf">9,194</td><td class="num" data-page-node-id="LdFBeYV2Ocx2iQQbdvlukO">4,418</td><td class="num" data-page-node-id="s0kL5NqKNw6CVWpFDqtMbX">13,612</td><td class="num" data-page-node-id="hOQf7Csuzfj1sMNZ1rsfIU">290</td><td data-page-node-id="lLQ894ZxRAvBodP4Ls1vMt">均衡</td></tr>
+      <tr data-page-node-id="A6U9OnAFuzHaYTS08YqIM6"><td data-page-node-id="1RBmds2joZijh6rW7znv1u"><strong data-page-node-id="06nqJFU42UMFsBCGeMhCSY">ADAPT</strong></td><td class="num" data-page-node-id="6nEhfH4CBSaniXfXBeuXeq">10,547</td><td class="num" data-page-node-id="vo2fSEROEdDJguK4On9mNC">3,400</td><td class="num" data-page-node-id="3TMobF3AqqqBUFFhc5bPYi">13,947</td><td class="num" data-page-node-id="z6ObTzIu1URbs3nsofvJHm">337</td><td data-page-node-id="xP1iqe3JTiDoXM8BN6MfMO">想得多、说得少（答案最短）</td></tr>
+    </tbody>
+  </table>
+  <p data-page-node-id="oIsm6ZaHl2Ncgq6ejBbHzX">四种条件的总输出 token 几乎一样（1.28–1.39 万），但内部构成完全相反：<strong data-page-node-id="9POsdx03zF1g2n4IkB7EFj">EN 把预算花在表达上，ADAPT 把预算花在思考上</strong>。ADAPT 的答案长度比 EN 短 44%，这对"要简洁输出"的场景有实际价值。</p>
+</section>
+
+<section data-page-node-id="57vu9oUFr8DkQuyC4CSTSq">
+  <h2 data-page-node-id="OTkEYZ9PARZJHfVmVRYzjS"><span class="n" data-page-node-id="jYIVn0isEQqzNjskAI1Q4J">05</span>结果三：模型的语言选择很有章法</h2>
+  <p class="lead" data-page-node-id="wJ41hdNLhBCyzRNtxPID7J">让模型自己判断题型选语言时，它的选择不是随机的，而是高度贴合题目的语言依赖度。</p>
+  <p data-page-node-id="3i6iOxX5osWueUOJIfegDD">下表为推理段落的中文字符占比（第二轮，3 轮一致）：<span class="tag cn" data-page-node-id="enbIrPR0VErBJZ3ZNegaR9">接近 1.0 = 选了中文</span><span class="tag en" data-page-node-id="uh9hhOSBJzKjvLY1J1yXP1">接近 0 = 选了英文</span></p>
+  <table class="heat" data-page-node-id="QvoJoYDRMLWYlvdJ4Oemnp">
+    <thead data-page-node-id="HP4MbbZG5k8sxuVqTfIAE6"><tr data-page-node-id="brPvVzGjpsg3qzwVGdC86c"><th class="lbl" data-page-node-id="IlI6AcQ5FnpINIKAVkAc8p">题目</th><th class="lbl" data-page-node-id="SkxR27exfxUqxbZHAVoNtw">类型</th><th data-page-node-id="nsWtVZU9PBzrPktT8lr0a0">ADAPT 自选</th><th data-page-node-id="uJSXJ3mxyIhAkCEK7rAPdt">NAT 默认</th></tr></thead>
+    <tbody data-page-node-id="8FUx8rJVyy6bjdNvftb9Ay">
+      <tr data-page-node-id="axSKC4cfOJsU9IWLSILSGC"><td class="lbl" data-page-node-id="Pxs4CqL9dYREHw6CzCDOYf">H1 先秦"他"字训诂</td><td class="lbl" data-page-node-id="mXQyOKSk5WjTmsFWlqk5n4"><span class="tag cn" data-page-node-id="vQXHrPjIHM80BRlGESOsLX">中文</span></td><td class="c4" data-page-node-id="VbIiH2ow04lvWkACCbnsIl">0.99</td><td class="c4" data-page-node-id="NZcrDp24HLOwtJtmyUxWPN">0.99</td></tr>
+      <tr data-page-node-id="BWyLwN1BMrzcd9NIkkbkJE"><td class="lbl" data-page-node-id="RFDTCKoPHYAr9L0ctsPBjw">H2 组合计数</td><td class="lbl" data-page-node-id="9Whpowdx9FCxvGe07EVVTZ"><span class="tag" data-page-node-id="B8s9LnczmtUVa3hI1De2YC">中性</span></td><td class="c3" data-page-node-id="oLhBU36y4bkOsGMLpkV5I5">0.88</td><td class="c3" data-page-node-id="b4ZQk2GVGdBFn1408PEo9d">0.82</td></tr>
+      <tr data-page-node-id="Bb4MF4dtPat3EHRJjWr6XK"><td class="lbl" data-page-node-id="cQlMbxoetQEmM4uAcXe4Zo">H3 "didn't bother to"</td><td class="lbl" data-page-node-id="Jwz7kj4HQUdDTcl1NaEwC0"><span class="tag en" data-page-node-id="CmxOOD2GstC7XBmrs69s9e">英文</span></td><td class="c0" data-page-node-id="D59GBoFL61GUtCyN7CNdwa">0.00</td><td class="c1" data-page-node-id="n4jDni9wPX3cs2rmCvJqkW">0.42</td></tr>
+      <tr data-page-node-id="We58cDYfcBcQDYc1KmtH2G"><td class="lbl" data-page-node-id="PLdhD7O0OE90KO6BE4xmFS">H4 骑士与无赖</td><td class="lbl" data-page-node-id="CAxhj5IkHMH8F7x3PI01nw"><span class="tag" data-page-node-id="De209XCOX8fngmid1kCOq8">中性</span></td><td class="c3" data-page-node-id="pee679LAaiRtqAfvW3vQ6t">0.80</td><td class="c3" data-page-node-id="6pI2MYXkCUpw4HQ2a4LC60">0.80</td></tr>
+      <tr data-page-node-id="kPz2gzVk7k07VYDJ3XyMl5"><td class="lbl" data-page-node-id="bbOuyoK3x0GsjuYhqmyTKx">H5 "他谁都不认识"</td><td class="lbl" data-page-node-id="Yg4zKVn5eFEokoEHU8GZOq"><span class="tag cn" data-page-node-id="sPEeuYyAe8CmPDbjr2KNGv">中文</span></td><td class="c4" data-page-node-id="lEPQwkfMts9wDsdhTq5iEv">0.96</td><td class="c4" data-page-node-id="txD0KavuBR2Xpr40IbBn8v">0.97</td></tr>
+      <tr data-page-node-id="zrhqEAvDzXRt6bBloe1Vtk"><td class="lbl" data-page-node-id="FZx7ewyERq7uSl0EGYYAr8">H6 英语搭配纠错</td><td class="lbl" data-page-node-id="IDCWzrD17mXAvlWXFL3HUs"><span class="tag en" data-page-node-id="D3GBYfO8c2pNwTAWvm6GLz">英文</span></td><td class="c0" data-page-node-id="872bOn3rTbhKS9ADE8yR9e">0.00</td><td class="c1" data-page-node-id="5VbpO15IBpAImho3bDu4IO">0.19</td></tr>
+    </tbody>
+  </table>
+  <div class="note find" data-page-node-id="PJm38TmvOHkXPsnnfM8VuS">
+    <strong data-page-node-id="6ZWsHXBx59rMAg76FiBtE8">关键观察：</strong>NAT（不指定）的默认行为<strong data-page-node-id="dYXti9PtmeZr629n5GYp7t">已经和 ADAPT 的刻意选择高度一致</strong>——中文题自然用中文想、英文题自然切英文，只是切换得没那么彻底（H3 为 0.42 混合，而 ADAPT 是 0.00 纯英文）。<strong data-page-node-id="AxpU7AszwWjkNgpw09A6Gn">换句话说，模型本来就具备这种按题型切换语言的能力，你要做的只是别去干扰它。</strong>
+  </div>
+</section>
+
+<section data-page-node-id="NEWDEEP01">
+  <h2 data-page-node-id="NEWDEEP01H"><span class="n" data-page-node-id="NEWDEEP01N">06</span>后续实验：任务复杂化与轮次堆叠</h2>
+  <p class="lead">针对追问"如果任务更复杂、或重复 20/50 轮会怎样"，追加了两条实验线：镜像长链压力测试 + 统计功效分析。</p>
+
+  <h3 data-page-node-id="NEWDEEP01A">6.1 镜像长链实验：同一串数字的三种语言外衣</h3>
+  <p>为分离"任务表述语言"与"思考语言"，生成了<strong>完全相同的 50 个加减操作</strong>的三种表述：中文数字（"加三百二十五"）、英文数字（"add three hundred and twenty-five"）、阿拉伯数字（"+325"）。交叉两种思考语言（EN/ZH），要求逐步报告累积值——从而可以定位<strong>第一次出错的步数</strong>，比单一对错敏感得多。</p>
+  <table>
+    <thead><tr><th>任务</th><th>组合</th><th class="num">报告步数</th><th class="num">错误步数</th><th class="num">逐步正确率</th><th class="num">终值正确</th></tr></thead>
+    <tbody>
+      <tr><td>50 步</td><td>EN 思考 × 中文/英文/数字题</td><td class="num">150</td><td class="num">0</td><td class="num">100%</td><td class="num">3/3</td></tr>
+      <tr><td>50 步</td><td>ZH 思考 × 中文/英文/数字题</td><td class="num">150</td><td class="num">0</td><td class="num">100%</td><td class="num">3/3</td></tr>
+      <tr><td>200 步（4 倍压力）</td><td>EN/ZH 思考 × 中文/英文题</td><td class="num">800</td><td class="num">0</td><td class="num">100%</td><td class="num">4/4</td></tr>
+    </tbody>
+  </table>
+  <div class="note find">
+    <strong>结果：</strong>200 步压力测试中，4 份答卷共 <strong>800 个步骤值全部精确</strong>，无一出错；表述语言与思考语言的全部交叉组合之间无任何差异。
+  </div>
+  <p><strong>为什么纵向加长不放大效应？</strong>机械长链任务里，语言只是<strong>输入编码层</strong>——"三百二十五"和"325"解析后进入的是同一个内部数值表征，计算本身与语言无关。每步一次 3 位数加法对模型是逐 token 的确定性操作，既无语义损失，也无误差累积。这与人类不同：人类工作记忆用语言编码信息，语言切换有真实成本；模型的"心算"发生在统一的向量空间里。</p>
+
+  <h3 data-page-node-id="NEWDEEP01B">6.2 堆轮次能测出差异吗？——统计功效分析</h3>
+  <p>基于第二轮实测方差（组内标准差 0.577 / 满分 12，变异系数 4.8%），计算检测不同效应量所需的最小重复轮数（双样本 t 检验，α=0.05，功效 80%）：</p>
+  <table>
+    <thead><tr><th class="num">每组轮数</th><th>可检测的最小准确率差异</th><th>解读</th></tr></thead>
+    <tbody>
+      <tr><td class="num">3（本实验）</td><td>≥ 11.0%</td><td>只能检测粗大差异</td></tr>
+      <tr><td class="num">20</td><td>≥ 4.3%</td><td>仍测不出本实验观测的 1.1%</td></tr>
+      <tr><td class="num">50</td><td>≥ 2.7%</td><td>依然测不出</td></tr>
+      <tr><td class="num">100</td><td>≥ 1.9%</td><td>接近但仍不足</td></tr>
+      <tr><td class="num">322</td><td>≥ 1.1%</td><td>恰好够检测本实验观测到的差异</td></tr>
+    </tbody>
+  </table>
+  <div class="note warn">
+    <strong>ROI 是平方根级的：</strong>轮数翻 10 倍，可检测下限只缩小约 3.2 倍；要把检测下限从 11% 压到 1%，需要约 100 倍轮数。而如果真实效应量本来就是 0，再多的轮次也只会反复得到"无显著差异"。<strong>堆轮次是性价比最低的路径。</strong>
+  </div>
+  <p><strong>正确路径是提高任务的"语言敏感性"而非步数或轮次</strong>：把任务设计成必须经过语言加工才能求解（深层语用、隐喻、跨文化推断），或把模型推到真正的能力边界（方差与效应量同时放大）。另一个未测但可预测的敏感场景是<strong>固定思考预算</strong>：由于中文编码效率低（1.16 vs 3.11 字符/token），预算受限时中文思考"能想的步数"更少，那时成本差异会转化为质量差异。</p>
+</section>
+
+<section data-page-node-id="ETWI58QxTCnD23u12x2Cua">
+  <h2 data-page-node-id="ETGFwOTYRP9JWkGppH0TaK"><span class="n" data-page-node-id="gvGEdYOhivnqhotIRJx7Sf">07</span>结论与实操建议</h2>
+
+  <h3 data-page-node-id="BaLUpzFWKHqdfeNSYsF5KQ">结论</h3>
+  <ol data-page-node-id="ShZL22XwMm2eXXk2ErFOLK">
+    <li data-page-node-id="qhXHq7yxu1kDBG8h49WUsP"><strong data-page-node-id="28gASid3TEHAuVizwlzpCC">思考语言不影响正确性。</strong>在模型能力范围内的任务上，差异小于 1.1%，远低于随机波动。所谓"用英文思考会更聪明"没有在本实验中得到支持。</li>
+    <li data-page-node-id="9V9IipYlW8tFePXC7KLAry"><strong data-page-node-id="jeE7kBtDcnSHpJ3KCOnhgn">思考语言显著影响成本。</strong>中文思考比英文多耗约 21% token（编码效率 1.16 vs 3.11 字符/token），自适应策略因额外的判断题型步骤再增加约 15%。</li>
+    <li data-page-node-id="BsWrhh3YzsmPV1g0cf1dXN"><strong data-page-node-id="YrHPDsAkqYE8tH6T5AKUPK">中文语义题不因英文思考而退化。</strong>用英文推理时，先秦训诂、汉语歧义、成语语义题依然全对——跨语言推理没有观察到语义损失。</li>
+    <li data-page-node-id="knnk9cYKATTpyfJpJw0w3T"><strong data-page-node-id="XAn4rKOtUYXCukPVkFEQz6">模型自身的默认策略已经接近最优。</strong>不干预（NAT 条件）时，得分最高档（31.67）、总输出最省（12,761 token），语言切换模式与刻意自适应几乎一致。</li>
+  </ol>
+
+  <h3 data-page-node-id="52QNRTwX5BL65sWYVtu2oR">实操建议</h3>
+  <ol data-page-node-id="jNOW2gM0gtjCJKdE0sl4aI">
+    <li data-page-node-id="0KODWdp8SOT3JeFOFhCusO"><strong data-page-node-id="jc5HCsyb51o1waSFYyp6Bw">别在这件事上优化正确率，去优化任务边界。</strong>本实验中所有失败都发生在"题目本身触及模型能力上限"时。换语言救不了一道不会做的题，但<strong data-page-node-id="XUPtc6WBxCdvLZvDRfL475">分解任务、引入外部验证（代码执行、查证）、要求自我复核</strong>可以。这是本实验最有价值的一条结论。</li>
+    <li data-page-node-id="SjhZYDk0SDTt8i2Jhetmfe"><strong data-page-node-id="DDG1HcpvWcozKu8TLAvoaV">如果关心成本与延迟：让模型用英文思考、用中文作答。</strong>这条组合实测最省（每分 242 token，比中文思考省 17%）。适合批量处理、长上下文、按 token 计费的场景。</li>
+    <li data-page-node-id="rOzAVR6206boZE8mCAEXoW"><strong data-page-node-id="rDVaWJKcrWYUtk8jC7PmMB">如果想要简洁输出：让它先判断题型再作答。</strong>ADAPT 条件的答案长度比强制英文短 44%，代价是思考成本上升 39%。适合要直接呈现给用户、不需要长篇解释的场景。</li>
+    <li data-page-node-id="XRFv25zl5X2YPGJAgL6mRr"><strong data-page-node-id="ZUzDUfHR82jgytiCTS3Aez">默认情况：不要干预。</strong>NAT 条件在准确率和总 token 上都处于最优档。过度指定思考语言反而可能引入额外开销。</li>
+    <li data-page-node-id="OPHvxZCxVC3QKSnAUzRulT"><strong data-page-node-id="S2ecMYnn51ZcTIKLmw7I5m">对中文用户：不必为中文任务强行切英文。</strong>中文题用中文想完全没问题；英文题它自己会切过去。强行全局指定英文思考，唯一确定的收益只有省钱。</li>
+  </ol>
+</section>
+
+<section data-page-node-id="6QA6SEHhWpYFEPWTXPgCoq">
+  <h2 data-page-node-id="tZIt7jOKdoGMoueFN9aM1g"><span class="n" data-page-node-id="ZosvGHiD1CbZ2lXYCSVe5B">08</span>局限与诚实说明</h2>
+  <ul data-page-node-id="lRDBKp3Og9aKSRRfiFJTOQ">
+    <li data-page-node-id="mv0XbSRCglyoPsnqeaivHV"><strong data-page-node-id="a8OYlH5xLfZyMYGLfdsD8y">天花板效应严重。</strong>第一轮 12 份全部满分，第二轮 6 题中 5 题满分。后续 200 步压力测试亦全部满分。本实验只能证明"在模型能力范围内的任务上无差异"，<strong data-page-node-id="3gDN5dF77eoCMDGaueX3Cg">无法排除</strong>模型接近能力极限时存在差异的可能。</li>
+    <li data-page-node-id="NEWLIM2"><strong data-page-node-id="NEWLIM2B">"复杂化"的纵向路径已测尽。</strong>机械长链（50/200 步镜像计算）证明语言只是编码层，纵向加长不产生语言效应；堆轮次受平方根 ROI 限制（检测 1.1% 差异需约 322 轮/组）。未测的敏感场景：深层语用任务、能力边界任务、固定思考预算场景。</li>
+    <li data-page-node-id="52In58oM3HWVEXGKkCmBEN"><strong data-page-node-id="FLcaq93B7BQCG3mMvWwUQ3">样本量小。</strong>每条件仅 3 轮，无法做有意义的显著性检验。所有准确率差异都应视为噪声；成本差异因两轮方向一致，可信度相对较高。</li>
+    <li data-page-node-id="2IwZgEyegEutLY2jX8ifvh"><strong data-page-node-id="NNwPS5RQo4TrYN3XnyMGMA">token 计数为近似。</strong>使用 <code data-page-node-id="gRANXedReSMOoLEe4sT5tf">cl100k_base</code> 编码器估算，与被试模型的实际分词器可能不同，但中英相对比例具有参考价值。</li>
+    <li data-page-node-id="dCc3QPsbUT7Dvim4mqYZPJ"><strong data-page-node-id="QyB5s4eCBW9d28u3zi53Wj">盲评环节失效，已改由主判按 rubric 逐题横向评阅。</strong>两名盲评子代理均给出全部满分（零区分度），经机械核对确认为评分失效（客观题有误仍给满分）。原始评分文件已保留备查。这意味着主观题评分存在主判已知晓条件分组的<strong data-page-node-id="JUygRrPAJpSmiUQMKY8Ujt">理论偏倚风险</strong>——但由于 16 题中 15 题的答案是"全对或全错"的客观判定，实际偏倚空间很小。</li>
+    <li data-page-node-id="fLLlnmBltu63bH15YEfIQZ"><strong data-page-node-id="McPD4TAqVNmFB0ZF5wEXnn">思考语言由指令引导而非直接控制。</strong>本实验通过"要求显式写出推理过程"来保证操纵可验证，这与真实推理模型内部不可见的思维链存在差距。</li>
+  </ul>
+</section>
+
+<p class="foot" data-page-node-id="o5sQYqIMNk9bs00DOKRv2l">实验材料完整保存于 <code data-page-node-id="E5h0jI0ASKidmRnKrqFWDW">llm-think-lang-exp/</code>：题库、rubric、34 份原始答卷、匿名答卷、长链镜像题与金标准、操纵检验与 token 统计脚本、评分记录。</p>
+
+</div>
+
+<script>
+const A={responsive:true,maintainAspectRatio:false};
+new Chart(document.getElementById('c1'),{type:'bar',
+ data:{labels:['EN 强制英文','ZH 强制中文','NAT 不指定','ADAPT 自选'],
+  datasets:[{data:[31.33,31.67,31.67,31.33],
+   backgroundColor:['#B5D4F4','#85B7EB','#378ADD','#185FA5'],borderWidth:0,borderRadius:4}]},
+ options:{...A,plugins:{legend:{display:false},
+  tooltip:{callbacks:{label:c=>'得分 '+c.parsed.y.toFixed(2)+' / 32'}}},
+  scales:{y:{beginAtZero:true,max:32,title:{display:true,text:'得分（满分 32）',font:{size:12}},
+   ticks:{font:{size:12}},grid:{color:'rgba(0,0,0,0.06)'}},
+   x:{ticks:{autoSkip:false,font:{size:12}},grid:{display:false}}}}});
+
+new Chart(document.getElementById('c2'),{type:'bar',
+ data:{labels:['EN 强制英文','NAT 不指定','ZH 强制中文','ADAPT 自选'],
+  datasets:[
+   {label:'思考 token',data:[7596,8538,9194,10547],backgroundColor:'#378ADD',borderWidth:0},
+   {label:'答案 token',data:[6103,4223,4418,3400],backgroundColor:'#9FE1CB',borderWidth:0}]},
+ options:{...A,plugins:{legend:{display:false},
+  tooltip:{callbacks:{label:c=>c.dataset.label+'：'+c.parsed.y.toLocaleString()}}},
+  scales:{x:{stacked:true,ticks:{autoSkip:false,font:{size:12}},grid:{display:false}},
+   y:{stacked:true,title:{display:true,text:'输出 token 数',font:{size:12}},
+    ticks:{font:{size:12}},grid:{color:'rgba(0,0,0,0.06)'}}}}});
+</script>
+</body>
+</html>

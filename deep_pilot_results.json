@@ -1,0 +1,56 @@
+{
+ "EN_cn50_R1": {
+  "steps_reported": 50,
+  "first_error_step": null,
+  "n_wrong_steps": 0,
+  "step_acc": 1.0,
+  "final_correct": true,
+  "final_val": -2727,
+  "gold_final": -2727
+ },
+ "EN_en50_R1": {
+  "steps_reported": 50,
+  "first_error_step": null,
+  "n_wrong_steps": 0,
+  "step_acc": 1.0,
+  "final_correct": true,
+  "final_val": -2727,
+  "gold_final": -2727
+ },
+ "EN_num50_R1": {
+  "steps_reported": 50,
+  "first_error_step": null,
+  "n_wrong_steps": 0,
+  "step_acc": 1.0,
+  "final_correct": true,
+  "final_val": -2727,
+  "gold_final": -2727
+ },
+ "ZH_cn50_R1": {
+  "steps_reported": 50,
+  "first_error_step": null,
+  "n_wrong_steps": 0,
+  "step_acc": 1.0,
+  "final_correct": true,
+  "final_val": -2727,
+  "gold_final": -2727
+ },
+ "ZH_en50_R1": {
+  "steps_reported": 50,
+  "first_error_step": null,
+  "n_wrong_steps": 0,
+  "step_acc": 1.0,
+  "final_correct": true,
+  "final_val": -2727,
+  "gold_final": -2727
+ },
+ "ZH_num50_R1": {
+  "steps_reported": 50,
+  "first_error_step": null,
+  "n_wrong_steps": 0,
+  "step_acc": 1.0,
+  "final_correct": true,
+  "final_val": -2727,
+  "gold_final": -2727
+ }
+}

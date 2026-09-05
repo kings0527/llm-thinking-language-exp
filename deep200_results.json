@@ -1,0 +1,34 @@
+{
+ "EN_cn200_R1": {
+  "reported": 200,
+  "first_error": null,
+  "wrong": 0,
+  "acc": 1.0,
+  "final": -1228,
+  "ok": true
+ },
+ "EN_en200_R1": {
+  "reported": 200,
+  "first_error": null,
+  "wrong": 0,
+  "acc": 1.0,
+  "final": -1228,
+  "ok": true
+ },
+ "ZH_cn200_R1": {
+  "reported": 200,
+  "first_error": null,
+  "wrong": 0,
+  "acc": 1.0,
+  "final": -1228,
+  "ok": true
+ },
+ "ZH_en200_R1": {
+  "reported": 200,
+  "first_error": null,
+  "wrong": 0,
+  "acc": 1.0,
+  "final": -1228,
+  "ok": true
+ }
+}
